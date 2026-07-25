@@ -1,0 +1,35 @@
+.header {
+	font: 700 11px 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+	text-transform: uppercase;
+	letter-spacing: 1.5px;
+}
+
+.track {
+	font: 700 15px 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.artist {
+	font: 400 13px 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.meta {
+	font: 400 11px 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.error-text {
+	font: 400 13px 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+	fill: #7ee787;
+}
+
+.osx-prompt {
+	font: 700 13px 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+	fill: #7ee787;
+}
+
+.osx-wave {
+	animation: wave 2.4s linear infinite;
+	fill: none;
+	stroke-width: 2;
+	stroke-linecap: round;
+	opacity: 0.85;
+}

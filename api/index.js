@@ -1,5 +1,5 @@
 const { fetchLastFmData } = require('../lib/lastfm');
-const { generateSvg } = require('../lib/svg');
+const { generateSvg, generateListSvg } = require('../lib/svg');
 const { fetchImageAsBase64, isValidUsername } = require('../lib/utils');
 const errorCard = require('../lib/templates/error');
 const { validateParams, checkWhitelist } = require('../lib/validation');
@@ -9,7 +9,7 @@ const { validateParams, checkWhitelist } = require('../lib/validation');
  * @author VLADos-IT <https://github.com/VLADos-IT>
  */
 module.exports = async (req, res) => {
-	const { user, safeWidth, safeBg, safeMode, safeRange, safeTheme } = validateParams(req.query);
+	const { user, safeWidth, safeBg, safeMode, safeRange, safeTheme, safeLimit } = validateParams(req.query);
 
 	// Common headers
 	res.setHeader('Content-Type', 'image/svg+xml');
@@ -36,6 +36,21 @@ module.exports = async (req, res) => {
 	}
 
 	try {
+		if (safeMode === 'list') {
+			const listData = await fetchLastFmData(user, safeMode, safeRange, safeLimit);
+			if (!listData || !listData.tracks?.length) {
+				return sendError('No data found', 404);
+			}
+
+			const tracksWithImages = await Promise.all(
+				listData.tracks.map(async (t) => ({ ...t, imageBase64: await fetchImageAsBase64(t.image) }))
+			);
+
+			res.setHeader('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
+			const svg = generateListSvg({ tracks: tracksWithImages }, { width: safeWidth, bg: safeBg, theme: safeTheme });
+			return res.send(svg);
+		}
+
 		const data = await fetchLastFmData(user, safeMode, safeRange);
 
 		if (!data) {

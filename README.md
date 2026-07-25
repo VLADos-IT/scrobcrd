@@ -14,14 +14,15 @@ Copy the following code into your `README.md` and replace `YOUR_USERNAME`:
 
 For detailed API documentation, please refer to [API.md](assets/API.md).
 
-| Parameter | Description                                                 | Default   |
-| :-------- | :---------------------------------------------------------- | :-------- |
-| `user`    | Your Last.fm username (required)                            | -         |
-| `bg`      | Background color(e.g. ffffff), 'none' or `transparent`      | `181818`  |
-| `width`   | Width of the SVG in pixels (MIN = 120)                      | `400`     |
-| `mode`    | Display mode: `smart`, `obsession`, `top`, `recent`, `now`  | `smart`   |
-| `range`   | Date range: `all`, `7day`, `1month`, etc (Requires API Key) | `all`     |
-| `theme`   | Visual theme: `default`, `retro`, `compact`                 | `default` |
+| Parameter | Description                                                           | Default   |
+| :-------- | :---------------------------------------------------------------------| :-------- |
+| `user`    | Your Last.fm username (required)                                      | -         |
+| `bg`      | Background color(e.g. ffffff), 'none' or `transparent`                | `181818`  |
+| `width`   | Width of the SVG in pixels (MIN = 120)                                | `400`     |
+| `mode`    | Display mode: `smart`, `obsession`, `top`, `recent`, `now`, `list`    | `smart`   |
+| `range`   | Date range: `all`, `7day`, `1month`, etc (Requires API Key)           | `all`     |
+| `theme`   | Visual theme: `default`, `retro`, `compact`, `osx`                    | `default` |
+| `limit`   | Tracks shown when `mode=list` (1-10)                                  | `5`       |
 
 ### Modes
 
@@ -33,6 +34,7 @@ For detailed API documentation, please refer to [API.md](assets/API.md).
 > - **recent**: Shows your most recent track (Listening History).
 > - **top**: Forces the display of "Top Track" label.
 > - **now**: Shows now playing track.
+> - **list**: Shows your top N tracks by playcount as a small table (`limit`, `range`).
 
 ### Example
 
@@ -41,6 +43,14 @@ For detailed API documentation, please refer to [API.md](assets/API.md).
 ```
 
 ![Example](assets/example.svg)
+
+### Top tracks list
+
+```markdown
+[![Last.fm Top Tracks](https://lastfm-github-profile.vercel.app/api?user=vlados14311&mode=list&limit=3&theme=osx)](https://www.last.fm/user/vlados14311)
+```
+
+![List Example](assets/example_list.svg)
 
 ## Deployment
 

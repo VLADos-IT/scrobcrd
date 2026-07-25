@@ -8,14 +8,15 @@ The API is available at `/api`. It returns an SVG image suitable for embedding i
 
 ## Query Parameters
 
-| Parameter | Type     | Default      | Description                                            |
-| :-------- | :------- | :----------- | :----------------------------------------------------- |
-| `user`    | `string` | **Required** | The Last.fm username to fetch data for.                |
-| `bg`      | `string` | `181818`     | Background color(e.g. ffffff), 'none' or `transparent` |
-| `width`   | `number` | `400`        | Width of the generated SVG in pixels.                  |
-| `mode`    | `string` | `smart`      | Display mode. `smart`, `obsession`, `top`, `recent`.   |
-| `range`   | `string` | `all`        | Period for Top Track. `all`, `7day`, `1month` etc.     |
-| `theme`   | `string` | `default`    | Visual theme. `default`, `retro`, `compact`.           |
+| Parameter | Type     | Default      | Description                                                         |
+| :-------- | :------- | :----------- | :-------------------------------------------------------------------|
+| `user`    | `string` | **Required** | The Last.fm username to fetch data for.                             |
+| `bg`      | `string` | `181818`     | Background color(e.g. ffffff), 'none' or `transparent`              |
+| `width`   | `number` | `400`        | Width of the generated SVG in pixels.                               |
+| `mode`    | `string` | `smart`      | Display mode. `smart`, `obsession`, `top`, `recent`, `now`, `list`. |
+| `range`   | `string` | `all`        | Period for Top Track / list. `all`, `7day`, `1month` etc.           |
+| `theme`   | `string` | `default`    | Visual theme. `default`, `retro`, `compact`, `osx`.                 |
+| `limit`   | `number` | `5`          | Only for `mode=list`. Number of tracks to show (1-10).              |
 
 ## Modes
 
@@ -40,6 +41,10 @@ The API is available at `/api`. It returns an SVG image suitable for embedding i
 
 - **Behavior**: Fetches the most recent track (Top Track).
 - **Label**: "LAST.FM TOP TRACK".
+
+### `list`
+
+- **Behavior**: Renders a small table of your top N tracks by playcount.
 
 ## Ranges (Optional)
 
