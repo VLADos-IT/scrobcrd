@@ -1,26 +1,24 @@
 {
-	"name": "lastfm-github-profile",
+	"name": "scrobcrd",
 	"version": "1.0.0",
-	"description": "Display your Last.fm obsession in your GitHub README",
+	"description": "SVG music cards for GitHub profiles and websites",
 	"main": "api/index.js",
 	"scripts": {
 		"start": "node server.js",
-		"test": "node test-scrape.js"
+		"test": "node test.js"
 	},
 	"keywords": [
-		"lastfm",
-		"readme",
-		"github",
-		"zsvg",
-		"obsession",
 		"music",
-		"vercel"
+		"scrobbling",
+		"svg",
+		"github-profile",
+		"lastfm",
+		"listenbrainz"
 	],
 	"author": "VLADos-IT",
 	"license": "MIT",
 	"dependencies": {
 		"axios": "^1.6.0",
-		"cheerio": "^1.0.0",
 		"express": "^5.2.1",
 		"express-rate-limit": "^8.2.1",
 		"lru-cache": "^11.2.5"

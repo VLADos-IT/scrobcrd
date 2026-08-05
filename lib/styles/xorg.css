@@ -1,0 +1,21 @@
+.xorg-title {
+    font: 700 10px 'DejaVu Sans Mono', 'Liberation Mono', monospace;
+    fill: #ebdbb2;
+}
+.xorg-label { 
+    font: 700 10px 'DejaVu Sans Mono', 'Liberation Mono', monospace; 
+    fill: #b16286; 
+    letter-spacing: 1px; 
+}
+.track { 
+    font: 700 15px 'DejaVu Sans', Ubuntu, sans-serif; 
+    fill: #ebdbb2; 
+}
+.artist { 
+    font: 400 13px 'DejaVu Sans', Ubuntu, sans-serif; 
+    fill: #a89984; 
+}
+.error-text { 
+    font: 400 13px 'DejaVu Sans Mono', monospace; 
+    fill: #ebdbb2; 
+}

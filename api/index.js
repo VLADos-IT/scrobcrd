@@ -1,102 +1,109 @@
-const { fetchLastFmData } = require('../lib/lastfm');
 const { generateSvg, generateListSvg } = require('../lib/svg');
 const { fetchImageAsBase64, isValidUsername } = require('../lib/utils');
 const errorCard = require('../lib/templates/error');
 const { validateParams, checkWhitelist } = require('../lib/validation');
+const { getProvider } = require('../lib/providers');
 
-/**
- * Last.fm Obsession Readme API
- * @author VLADos-IT <https://github.com/VLADos-IT>
- */
 module.exports = async (req, res) => {
-	const { user, safeWidth, safeBg, safeMode, safeRange, safeTheme, safeLimit } = validateParams(req.query);
+    const { user, safeWidth, safeBg, safeAccent, safeMode, safeRange, safeTheme, safeLimit, safeSource } = validateParams(req.query);
+    const provider = getProvider(safeSource);
+    
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Content-Disposition', 'inline; filename="scrobcrd.svg"');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; sandbox");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
-	// Common headers
-	res.setHeader('Content-Type', 'image/svg+xml');
-	res.setHeader('Content-Disposition', 'inline; filename="lastfm-profile.svg"');
-	res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; sandbox");
-	res.setHeader('X-Content-Type-Options', 'nosniff');
+    const sendError = (message, status = 400) => res.status(status).send(errorCard({
+        width: safeWidth,
+        height: 120,
+        bgFill: safeBg,
+        message
+    }));
 
-	const sendError = (message, status) => {
-		if (status) res.status(status);
-		res.send(errorCard({ width: safeWidth, height: 120, bgFill: safeBg, message }));
-	};
+    if (!user) return sendError('Missing user parameter', 400);
+    if (!isValidUsername(user)) return sendError('Invalid username', 400);
+    if (safeSource === 'lastfm' && ['top', 'list'].includes(safeMode) && !checkWhitelist(user, safeRange)) {
+        return sendError('Range feature restricted', 403);
+    }
 
-	if (!user) {
-		return sendError('Missing user parameter', 400);
-	}
+    try {
+        if (safeMode === 'list') {
+            const listData = await provider.fetch(user, safeMode, safeRange, safeLimit);
 
-	if (!isValidUsername(user)) {
-		return sendError('Invalid username', 400);
-	}
+            if (!listData || !listData.tracks?.length) {
+                return sendError('No tracks found', 404);
+            }
 
-	// Whitelist
-	if (!checkWhitelist(user, req.query.range, safeRange)) {
-		return sendError('Range feature restricted', 403);
-	}
+            const tracksWithImages = await Promise.all(listData.tracks.map(async (track) => ({
+                ...track,
+                imageBase64: await fetchImageAsBase64(track.image)
+            })));
+            res.setHeader('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
+            
+            const svg = generateListSvg(
+                { tracks: tracksWithImages },
+                {
+                    width: safeWidth,
+                    bg: safeBg,
+                    theme: safeTheme,
+                    accentColor: safeAccent || provider.accentColor,
+                    profileUrl: provider.profileUrl(user)
+                }
+            );
+            return res.send(svg);
+        }
 
-	try {
-		if (safeMode === 'list') {
-			const listData = await fetchLastFmData(user, safeMode, safeRange, safeLimit);
-			if (!listData || !listData.tracks?.length) {
-				return sendError('No data found', 404);
-			}
+        const data = await provider.fetch(user, safeMode, safeRange);
 
-			const tracksWithImages = await Promise.all(
-				listData.tracks.map(async (t) => ({ ...t, imageBase64: await fetchImageAsBase64(t.image) }))
-			);
+        if (!data) {
+            if (safeMode === 'now') return sendError('Not playing', 200);
+            if (safeMode === 'obsession') return sendError('No obsession set', 404);
+            if (safeMode === 'recent') return sendError('No recent listens', 404);
+            if (safeMode === 'top') return sendError('No top tracks found', 404);
+            return sendError('No music activity found', 404);
+        }
 
-			res.setHeader('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
-			const svg = generateListSvg({ tracks: tracksWithImages }, { width: safeWidth, bg: safeBg, theme: safeTheme });
-			return res.send(svg);
-		}
+        if (safeMode === 'top') data.type = 'top_track';
 
-		const data = await fetchLastFmData(user, safeMode, safeRange);
+        res.setHeader('Cache-Control', getCacheControl(safeMode, data.type));
 
-		if (!data) {
-			if (safeMode === 'now') {
-				return sendError('Not playing', 200);
-			}
-			if (safeMode === 'obsession') {
-				return sendError(`No current obsession found`, 404);
-			}
-			throw { response: { status: 404 } };
-		}
+        const imageBase64 = await fetchImageAsBase64(data.image);
 
-		if (safeMode === 'top') {
-			data.type = 'top_track';
-		}
+        const svg = generateSvg(
+            { ...data, imageBase64 },
+            {
+                width: safeWidth,
+                bg: safeBg,
+                theme: safeTheme,
+                brand: provider.brand,
+                accentColor: safeAccent || provider.accentColor,
+                profileUrl: provider.profileUrl(user)
+            }
+        );
 
-		if (safeMode === 'obsession' || (safeMode === 'smart' && !data.isRecent)) {
-			res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=7200');
-		} else {
-			res.setHeader('Cache-Control', 'public, max-age=240, s-maxage=240, stale-while-revalidate=120');
-		}
-		if (safeMode === 'recent') {
-			res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60, stale-while-revalidate=30');
-		}
-		if (safeMode === 'now') {
-			res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=15');
-		}
+        res.send(svg);
 
-		// Fetch Image
-		const imageBase64 = await fetchImageAsBase64(data.image);
+    } catch (error) {
+        console.error('Request failed:', error.message);
+        const message = error.message || '';
 
-		const svg = generateSvg({ ...data, imageBase64 }, { width: safeWidth, bg: safeBg, mode: safeMode, theme: safeTheme });
-		res.send(svg);
+        if (message.includes('API_KEY_MISSING')) {
+            return sendError(`Range needs API Key for ${provider.brand}`, 501);
+        }
+        if (message.includes('PRIVATE')) {
+            return sendError('Activity is private', 403);
+        }
+        if (error.response?.status === 404) {
+            return sendError('No music activity found', 404);
+        }
 
-	} catch (error) {
-		console.error(error);
-		if (error.message === 'LASTFM_API_KEY_MISSING') {
-			return sendError('Range needs LASTFM API Key', 501);
-		}
-		if (error.message === 'RECENT_TRACKS_PRIVATE') {
-			return sendError('Recent tracks are private', 403);
-		}
-		if (error.response && error.response.status === 404) {
-			sendError(`No data found`, 404);
-		} else {
-			sendError('Internal Server Error', 500);
-		}
-	}
+        return sendError('Internal Server Error', 500);
+    }
 };
+
+function getCacheControl(mode, type) {
+    if (mode === 'now' || type === 'nowplaying') return 'public, max-age=30, s-maxage=30, stale-while-revalidate=15';
+    if (mode === 'recent') return 'public, max-age=60, s-maxage=60, stale-while-revalidate=30';
+    if (mode === 'obsession' || (mode === 'smart' && type === 'obsession')) return 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=7200';
+    return 'public, max-age=240, s-maxage=240, stale-while-revalidate=120';
+}

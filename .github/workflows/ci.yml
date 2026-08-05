@@ -24,5 +24,5 @@ jobs:
     - name: Install dependencies
       run: npm install
       
-    - name: Run Test Scrape
-      run: node test-scrape.js
+    - name: Run tests
+      run: npm test

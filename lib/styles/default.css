@@ -1,4 +1,14 @@
-.header { font: 600 10px 'Segoe UI', Ubuntu, Sans-Serif; text-transform: uppercase; letter-spacing: 1px; }
-.track { font: 600 16px 'Segoe UI', Ubuntu, Sans-Serif; }
-.artist { font: 400 14px 'Segoe UI', Ubuntu, Sans-Serif; }
-.error-text { font: 400 14px 'Segoe UI', Ubuntu, Sans-Serif; fill: #ffffff; }
+.header { 
+    font: 600 10px 'Segoe UI', Ubuntu, Sans-Serif;
+    text-transform: uppercase; letter-spacing: 1px;
+ }
+.track {
+    font: 600 16px 'Segoe UI', Ubuntu, Sans-Serif;
+}
+.artist { 
+    font: 400 14px 'Segoe UI', Ubuntu, Sans-Serif; 
+}
+.error-text { 
+    font: 400 14px 'Segoe UI', Ubuntu, Sans-Serif; 
+    fill: #ffffff; 
+}

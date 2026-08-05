@@ -4,7 +4,6 @@ const handler = require('./api/index');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Rate limiting: 60 requests per minute per IP
 const limiter = rateLimit({
 	windowMs: 60 * 1000,
 	max: 60,
@@ -16,7 +15,7 @@ app.use('/api', limiter);
 app.get('/api', handler);
 
 app.get('/', (req, res) => {
-	res.send('Last.fm Obsession API is running. Use /api?user=YOUR_USERNAME to get the SVG.');
+	res.send('scrobcrd is running. Use /api?user=YOUR_USERNAME to get an SVG card.');
 });
 
 app.listen(port, () => {

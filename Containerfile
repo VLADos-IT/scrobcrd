@@ -4,11 +4,9 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --production
+RUN npm install --omit=dev
 
 COPY . .
-
-COPY .env.example .env
 
 EXPOSE 3000
 
