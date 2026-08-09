@@ -18,17 +18,17 @@ For ListenBrainz add `&source=listenbrainz`:
 
 ### Configuration
 
-| Parameter | Description                                                           | Default      |
-| :-------- | :---------------------------------------------------------------------| :----------- |
-| `user`    | Your username on the selected `source` (required)                     | -            |
-| `source`  | Data source: `lastfm` or `listenbrainz`                               | `lastfm`     |
-| `bg`      | Background color(e.g. ffffff), 'none' or `transparent`                | `181818`     |
-| `width`   | Width of the SVG in pixels (MIN = 120)                                | `400`        |
-| `mode`    | Display mode: `smart`, `obsession`, `top`, `recent`, `now`, `list`    | `smart`      |
-| `range`   | Date range: `all`, `7day`, `1month`, etc (Requires API Key)           | `all`        |
-| `theme`   | Visual theme: `default`, `retro`, `compact`, `osx`                    | `default`    |
-| `limit`   | Tracks shown when `mode=list` (1-10)                                  | `5`          |
-| `accent`  | Color for accents(e.g. ffffff)                                        | `provider`   | 
+| Parameter | Description                                                                    | Default      |
+| :-------- | :------------------------------------------------------------------------------| :----------- |
+| `user`    | Your username on the selected `source` (required)                              | -            |
+| `source`  | Data source: `lastfm` or `listenbrainz`                                        | `lastfm`     |
+| `bg`      | Background color(e.g. ffffff), 'none' or `transparent`                         | `181818`     |
+| `width`   | Width of the SVG in pixels (MIN = 120)                                         | `400`        |
+| `mode`    | Display mode: `smart`, `obsession`, `top`, `recent`, `now`, `list`, `history`  | `smart`      |
+| `range`   | Date range: `all`, `7day`, `1month`, etc (Requires API Key)                    | `all`        |
+| `theme`   | Visual theme: `default`, `retro`, `compact`, `osx`, `xorg`                     | `default`    |
+| `limit`   | Tracks shown when `mode=list`/`mode=history` (1-10)                            | `5`          |
+| `accent`  | Color for accents(e.g. ffffff)                                                 | `provider`   |
 
 ### Modes
 
@@ -41,18 +41,25 @@ For ListenBrainz add `&source=listenbrainz`:
 > - **top**: Forces the display of "Top Track" label.
 > - **now**: Shows now playing track.
 > - **list**: Shows your top N tracks by playcount as a small table (`limit`, `range`).
+> - **history**: Shows your last N listened tracks as a small table (`limit`).
 
 ### Example
 
 ![Example](assets/scrobcrd.svg)
 ![Example lastfm](assets/scrobcrd_smart.svg)
-### Top tracks list
+
+### Top/Recent tracks list
 
 ```markdown
 [![Last.fm Top Tracks](https://lastfm-github-profile.vercel.app/api?user=vlados14311&mode=list&limit=3)](https://www.last.fm/user/vlados14311)
 ```
 
+```markdown
+[![ListenBrainz Recent Tracks](https://lastfm-github-profile.vercel.app/api?user=vlados14311&mode=history&limit=3&source=listenbrainz)](https://listenbrainz.org/user/vlados14311/)
+```
+
 ![List Example](assets/example_list.svg)
+![History Example](assets/scrobcrd_history.svg)
 
 ## Deployment
 
@@ -62,30 +69,30 @@ If you prefer to host it yourself.
 
 1. **Build the image:**
 
-    ```bash
-    podman build -t lastfm-obsession .
-    ```
+	```bash
+	podman build -t scrobcrd .
+	```
 
 2. **Run the container:**
 
-    ```bash
-    podman run -d -p 3000:3000 --name lastfm-obsession lastfm-obsession
-    ```
+	```bash
+	podman run -d -p 3000:3000 --name scrobcrd scrobcrd
+	```
 
-    **With Last.fm API Key (for Ranges on `source=lastfm`):**
+	**With Last.fm API Key (for Ranges on `source=lastfm`):**
 
-    ```bash
-    podman run -d -p 3000:3000 -e LASTFM_API_KEY=your_key --name lastfm-obsession lastfm-obsession
-    ```
+	```bash
+	podman run -d -p 3000:3000 -e LASTFM_API_KEY=your_key --name scrobcrd scrobcrd
+	```
 
-    **With a ListenBrainz token:**
+	**With a ListenBrainz token (optional, raises rate limits on `source=listenbrainz`):**
 
-    ```bash
-    podman run -d -p 3000:3000 -e LISTENBRAINZ_TOKEN=your_token --name lastfm-obsession lastfm-obsession
-    ```
+	```bash
+	podman run -d -p 3000:3000 -e LISTENBRAINZ_API_KEY=your_token --name scrobcrd scrobcrd
+	```
 
 3. **Access:**
-    Your API will be available at `http://YOUR_SERVER_IP:3000/api?user=YOUR_USERNAME`.
+	Your API will be available at `http://YOUR_SERVER_IP:3000/api?user=YOUR_USERNAME`.
 
 > [!NOTE]
 > **Creating Custom Themes**

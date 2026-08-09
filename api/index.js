@@ -13,12 +13,18 @@ module.exports = async (req, res) => {
     res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; sandbox");
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
-    const sendError = (message, status = 400) => res.status(status).send(errorCard({
-        width: safeWidth,
-        height: 120,
-        bgFill: safeBg,
-        message
-    }));
+    const sendError = (message, status = 400) => {
+        res.setHeader('Cache-Control', status >= 500
+            ? 'no-store'
+            : 'public, max-age=30, s-maxage=30, stale-while-revalidate=60');
+
+        return res.status(status).send(errorCard({
+            width: safeWidth,
+            height: 120,
+            bgFill: safeBg,
+            message
+        }));
+    };
 
     if (!user) return sendError('Missing user parameter', 400);
     if (!isValidUsername(user)) return sendError('Invalid username', 400);
@@ -27,19 +33,22 @@ module.exports = async (req, res) => {
     }
 
     try {
-        if (safeMode === 'list') {
+        if (safeMode === 'list' || safeMode === 'history') {
             const listData = await provider.fetch(user, safeMode, safeRange, safeLimit);
 
             if (!listData || !listData.tracks?.length) {
-                return sendError('No tracks found', 404);
+                return sendError(safeMode === 'history' ? 'No recent listens found' : 'No tracks found', 404);
             }
 
             const tracksWithImages = await Promise.all(listData.tracks.map(async (track) => ({
                 ...track,
                 imageBase64: await fetchImageAsBase64(track.image)
             })));
-            res.setHeader('Cache-Control', 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
-            
+
+            res.setHeader('Cache-Control', safeMode === 'history'
+                ? 'public, max-age=60, s-maxage=60, stale-while-revalidate=30'
+                : 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
+
             const svg = generateListSvg(
                 { tracks: tracksWithImages },
                 {
@@ -47,7 +56,8 @@ module.exports = async (req, res) => {
                     bg: safeBg,
                     theme: safeTheme,
                     accentColor: safeAccent || provider.accentColor,
-                    profileUrl: provider.profileUrl(user)
+                    profileUrl: provider.profileUrl(user),
+                    listType: listData.type
                 }
             );
             return res.send(svg);
