@@ -1,19 +1,23 @@
 const { generateSvg, generateListSvg } = require('../lib/svg');
-const { fetchImageAsBase64, isValidUsername } = require('../lib/utils');
+const { fetchImageAsBase64, isValidUsername, withDeadline } = require('../lib/utils');
 const errorCard = require('../lib/templates/error');
 const { validateParams, checkWhitelist } = require('../lib/validation');
 const { getProvider } = require('../lib/providers');
 
+const HANDLER_DEADLINE_MS = 8500;
+
 module.exports = async (req, res) => {
     const { user, safeWidth, safeBg, safeAccent, safeMode, safeRange, safeTheme, safeLimit, safeSource } = validateParams(req.query);
     const provider = getProvider(safeSource);
-    
+
     res.setHeader('Content-Type', 'image/svg+xml');
     res.setHeader('Content-Disposition', 'inline; filename="scrobcrd.svg"');
     res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; sandbox");
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
     const sendError = (message, status = 400) => {
+        if (res.headersSent) return;
+
         res.setHeader('Cache-Control', status >= 500
             ? 'no-store'
             : 'public, max-age=30, s-maxage=30, stale-while-revalidate=60');
@@ -26,13 +30,18 @@ module.exports = async (req, res) => {
         }));
     };
 
+    const sendSvg = (svg, status = 200) => {
+        if (res.headersSent) return;
+        return res.status(status).send(svg);
+    };
+
     if (!user) return sendError('Missing user parameter', 400);
     if (!isValidUsername(user)) return sendError('Invalid username', 400);
     if (safeSource === 'lastfm' && ['top', 'list'].includes(safeMode) && !checkWhitelist(user, safeRange)) {
         return sendError('Range feature restricted', 403);
     }
 
-    try {
+    const run = async () => {
         if (safeMode === 'list' || safeMode === 'history') {
             const listData = await provider.fetch(user, safeMode, safeRange, safeLimit);
 
@@ -60,7 +69,7 @@ module.exports = async (req, res) => {
                     listType: listData.type
                 }
             );
-            return res.send(svg);
+            return sendSvg(svg);
         }
 
         const data = await provider.fetch(user, safeMode, safeRange);
@@ -91,11 +100,20 @@ module.exports = async (req, res) => {
             }
         );
 
-        res.send(svg);
+        return sendSvg(svg);
+    };
 
+    try {
+        await withDeadline(run(), HANDLER_DEADLINE_MS);
     } catch (error) {
-        console.error('Request failed:', error.message);
         const message = error.message || '';
+
+        if (message === 'DEADLINE_EXCEEDED') {
+            console.error(`Request timed out after ${HANDLER_DEADLINE_MS}ms for user=${user} mode=${safeMode} source=${safeSource}`);
+            return sendError('Slow response', 504);
+        }
+
+        console.error('Request failed:', message);
 
         if (message.includes('API_KEY_MISSING')) {
             return sendError(`Range needs API Key for ${provider.brand}`, 501);
