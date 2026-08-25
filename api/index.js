@@ -4,7 +4,7 @@ const errorCard = require('../lib/templates/error');
 const { validateParams, checkWhitelist } = require('../lib/validation');
 const { getProvider } = require('../lib/providers');
 
-const HANDLER_DEADLINE_MS = 8500;
+const HANDLER_DEADLINE_MS = 10000;
 
 module.exports = async (req, res) => {
     const { user, safeWidth, safeBg, safeAccent, safeMode, safeRange, safeTheme, safeLimit, safeSource } = validateParams(req.query);
