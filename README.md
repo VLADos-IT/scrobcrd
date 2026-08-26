@@ -4,6 +4,10 @@ Display your current **NOW TRACK**, **Obsession** or **Top Track** in GitHub REA
 
 ## 🚀 Usage
 
+### Badge configurator
+Use the configurator to build your own badge:
+https://vlados-it.github.io/scrobcrd/
+
 Copy the following code into your `README.md` and replace `YOUR_USERNAME`:
 
 ```markdown

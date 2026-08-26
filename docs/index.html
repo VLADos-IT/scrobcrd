@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>scrobcrd — build your badge</title>
+        <meta name="description" content="Build a Last.fm / ListenBrainz now-playing badge for your GitHub profile." />
+        <link rel="icon" href="favicon.svg" />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+
+    <body>
+        <header class="topbar">
+            <div class="topbar-inner">
+                <span class="brand-name">scrobcrd</span>
+                <a class="repo-link" href="https://github.com/VLADos-IT/scrobcrd" data-repo-link target="_blank" rel="noopener">
+                    Source on GitHub
+                    <img src="github.svg" width="14" height="14" alt="GitHub" />
+                </a>
+            </div>
+        </header>
+
+        <main class="layout">
+            <div class="console">
+                <form class="controls" id="controls">
+                    <fieldset class="channel">
+                        <legend><span class="ch-index">1</span> Source &amp; profile</legend>
+
+                        <div class="segmented" data-field="source">
+                            <button type="button" class="seg-btn is-active" data-value="lastfm">Last.fm</button>
+                            <button type="button" class="seg-btn" data-value="listenbrainz">ListenBrainz</button>
+                        </div>
+
+                        <label class="field">
+                            <span class="field-label">Username</span>
+                            <input type="text" id="user" name="user" spellcheck="false" />
+                        </label>
+                    </fieldset>
+
+                    <fieldset class="channel">
+                        <legend><span class="ch-index">2</span> Mode</legend>
+
+                        <label class="field">
+                            <span class="field-label">Mode</span>
+                            <select id="mode" name="mode">
+                                <option value="smart" selected>Smart (obsession → top track)</option>
+                                <option value="obsession">Obsession (7-day top track)</option>
+                                <option value="top">Top track</option>
+                                <option value="recent">Recent track</option>
+                                <option value="now">Now playing</option>
+                                <option value="list">Top tracks list</option>
+                                <option value="history">Recent tracks list</option>
+                            </select>
+                        </label>
+
+                        <label class="field" data-visible-for="top,list">
+                            <span class="field-label">Range</span>
+                            <select id="range" name="range">
+                                <option value="all" selected>All time</option>
+                                <option value="7day">7 days</option>
+                                <option value="1month">1 month</option>
+                                <option value="3month">3 months</option>
+                                <option value="6month">6 months</option>
+                                <option value="12month">12 months</option>
+                            </select>
+                        </label>
+
+                        <label class="field" data-visible-for="list,history">
+                            <span class="field-label">Tracks shown <output id="limitOut">5</output></span>
+                            <input type="range" id="limit" name="limit" min="1" max="10" step="1" value="5" />
+                        </label>
+                    </fieldset>
+
+                    <fieldset class="channel">
+                        <legend><span class="ch-index">3</span> Design</legend>
+
+                        <label class="field">
+                            <span class="field-label">Theme</span>
+                            <select id="theme" name="theme">
+                                <option value="default" selected>Default</option>
+                                <option value="compact">Compact (gradient)</option>
+                                <option value="retro">Retro</option>
+                                <option value="osx">OSX terminal</option>
+                                <option value="xorg">Xorg</option>
+                            </select>
+                        </label>
+
+                        <label class="field">
+                            <span class="field-label">Width <output id="widthOut">400</output>px</span>
+                            <input type="range" id="width" name="width" min="120" max="1000" step="10" value="400" />
+                        </label>
+
+                        <div class="field-row">
+                            <label class="field">
+                                <span class="field-label">Background</span>
+                                <span class="color-input">
+                                    <input type="color" id="bgPicker" value="#181818" />
+                                    <input type="text" id="bg" name="bg" value="181818" maxlength="8" spellcheck="false" />
+                                </span>
+                            </label>
+                            <label class="field-toggle">
+                                <input type="checkbox" id="bgTransparent" />
+                                <span>Transparent</span>
+                            </label>
+                        </div>
+
+                        <div class="field-row">
+                            <label class="field">
+                                <span class="field-label">Accent</span>
+                                <span class="color-input">
+                                    <input type="color" id="accentPicker" value="#d1170e" disabled />
+                                    <input type="text" id="accent" name="accent" placeholder="provider default" maxlength="8" spellcheck="false" disabled />
+                                </span>
+                            </label>
+                            <label class="field-toggle">
+                                <input type="checkbox" id="accentEnabled" />
+                                <span>Override</span>
+                            </label>
+                        </div>
+                    </fieldset>
+                </form>
+
+                <aside class="preview-pane">
+                    <div class="preview-card">
+                        <div class="preview-label">
+                            <span class="live-dot" aria-hidden="true"></span> Live preview
+                        </div>
+                        <div class="preview-frame" id="previewFrame">
+                            <div class="preview-empty" id="previewEmpty">Enter a username to see your badge</div>
+                            <img id="previewImg" alt="Badge preview" hidden />
+                        </div>
+                        <a class="preview-open" id="previewOpen" href="#" target="_blank" rel="noopener" hidden>Open image in a new tab ↗</a>
+                    </div>
+
+                    <div class="snippets" id="snippets" hidden>
+                        <div class="snippet-block">
+                            <div class="snippet-head">
+                                <span>Link</span>
+                                <button type="button" class="copy-btn" data-copy-target="snippetUrl">Copy</button>
+                            </div>
+                            <pre class="snippet-body" id="snippetUrl"></pre>
+                        </div>
+                        <div class="snippet-block">
+                            <div class="snippet-head">
+                                <span>Markdown</span>
+                                <button type="button" class="copy-btn" data-copy-target="snippetMd">Copy</button>
+                            </div>
+                            <pre class="snippet-body" id="snippetMd"></pre>
+                        </div>
+                        <div class="snippet-block">
+                            <div class="snippet-head">
+                                <span>HTML</span>
+                                <button type="button" class="copy-btn" data-copy-target="snippetHtml">Copy</button>
+                            </div>
+                            <pre class="snippet-body" id="snippetHtml"></pre>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <script src="app.js"></script>
+    </body>
+</html>
