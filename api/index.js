@@ -3,8 +3,24 @@ const { fetchImageAsBase64, isValidUsername, withDeadline } = require('../lib/ut
 const errorCard = require('../lib/templates/error');
 const { validateParams, checkWhitelist } = require('../lib/validation');
 const { getProvider } = require('../lib/providers');
+const { findFallbackCovers } = require('../lib/cover-fallback');
 
 const HANDLER_DEADLINE_MS = 10000;
+const COVER_DEADLINE_MS = 6000;
+
+async function loadCover({ image, artist, track }) {
+    const load = async () => {
+        const primary = await fetchImageAsBase64(image);
+        if (primary) return primary;
+        const urls = await findFallbackCovers(artist, track);
+        return urls.length ? fetchImageAsBase64(urls) : '';
+    };
+    try {
+        return await withDeadline(load(), COVER_DEADLINE_MS, 'COVER_DEADLINE');
+    } catch (e) {
+        return '';
+    }
+}
 
 module.exports = async (req, res) => {
     const { user, safeWidth, safeBg, safeAccent, safeMode, safeRange, safeTheme, safeLimit, safeSource } = validateParams(req.query);
@@ -51,7 +67,7 @@ module.exports = async (req, res) => {
 
             const tracksWithImages = await Promise.all(listData.tracks.map(async (track) => ({
                 ...track,
-                imageBase64: await fetchImageAsBase64(track.image)
+                imageBase64: await loadCover(track)
             })));
 
             res.setHeader('Cache-Control', safeMode === 'history'
@@ -86,7 +102,7 @@ module.exports = async (req, res) => {
 
         res.setHeader('Cache-Control', getCacheControl(safeMode, data.type));
 
-        const imageBase64 = await fetchImageAsBase64(data.image);
+        const imageBase64 = await loadCover(data);
 
         const svg = generateSvg(
             { ...data, imageBase64 },

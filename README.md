@@ -113,6 +113,7 @@ If you prefer to host it yourself.
 
 - **Two sources**: Last.fm and ListenBrainz, selected with `&source=`.
 - **Smart Fallback**: Automatically switches to "Top Track" if no obsession is currently set.
+- **Cover fallback**: If a track has no artwork on the source, the cover is looked up by artist and title.
 - **Fast**: Uses Vercel Serverless Functions for low latency.
 - **No API Key Required**: Works out of the box for both sources; keys/tokens only unlock extra features (ranges on Last.fm, higher rate limits on ListenBrainz).
 

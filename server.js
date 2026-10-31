@@ -6,7 +6,7 @@ const port = process.env.PORT || 3000;
 
 const limiter = rateLimit({
 	windowMs: 60 * 1000,
-	max: 60,
+	limit: 60,
 	standardHeaders: true,
 	legacyHeaders: false,
 });
