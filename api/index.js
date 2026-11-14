@@ -42,7 +42,7 @@ module.exports = async (req, res) => {
             ? 'no-store'
             : 'public, max-age=30, s-maxage=30, stale-while-revalidate=60');
 
-        return res.status(status).type('image/svg+xml').send(errorCard({
+        return res.status(status).send(errorCard({
             width: safeWidth,
             height: 120,
             bgFill: safeBg,
@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
         if (typeof svg !== 'string' || !/^\s*<svg[\s>]/.test(svg)) {
             return sendError('Internal Server Error', 500);
         }
-        return res.status(status).type('image/svg+xml').send(svg);
+        return res.status(status).send(svg);
     };
 
     if (!user) return sendError('Missing user parameter', 400);
