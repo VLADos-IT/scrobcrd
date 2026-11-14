@@ -52,6 +52,32 @@
     };
     form.onchange = update;
 
+    // Debounced so typing a name or dragging a slider doesn't fire a request per
+    // keystroke, and no cache-buster so repeat previews come from the CDN cache.
+    let previewTimer;
+    let retried = false;
+    function loadPreview(apiUrl) {
+        const img = $('previewImg');
+        clearTimeout(previewTimer);
+        retried = false;
+        img.hidden = false;
+        $('previewFrame').classList.add('is-loading');
+        previewTimer = setTimeout(() => { img.src = apiUrl; }, 450);
+
+        img.onload = () => $('previewFrame').classList.remove('is-loading');
+        img.onerror = () => {
+            if (!retried) {
+                retried = true;
+                setTimeout(() => { img.src = `${apiUrl}&retry=1`; }, 1200);
+                return;
+            }
+            $('previewFrame').classList.remove('is-loading');
+            img.hidden = true;
+            $('previewEmpty').textContent = 'Could not load the badge. Check the username and try again.';
+            $('previewEmpty').hidden = false;
+        };
+    }
+
     function update() {
         const user = $('user').value.trim();
         const mode = $('mode').value;
@@ -62,6 +88,7 @@
 
         if (!user) {
             $('previewImg').hidden = $('previewOpen').hidden = $('snippets').hidden = true;
+            $('previewEmpty').textContent = 'Enter a username to see your badge';
             $('previewEmpty').hidden = false;
             return;
         }
@@ -81,8 +108,7 @@
         const profileUrl = PROFILES[source](user);
         const sourceName = source === 'lastfm' ? 'Last.fm' : 'ListenBrainz';
 
-        $('previewImg').src = `${apiUrl}&_=${Date.now()}`;
-        $('previewImg').hidden = false;
+        loadPreview(apiUrl);
         $('previewEmpty').hidden = true;
         $('previewOpen').href = apiUrl;
         $('previewOpen').hidden = $('snippets').hidden = false;

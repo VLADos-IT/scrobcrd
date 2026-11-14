@@ -5,8 +5,12 @@ const { validateParams, checkWhitelist } = require('../lib/validation');
 const { getProvider } = require('../lib/providers');
 const { findFallbackCovers } = require('../lib/cover-fallback');
 
-const HANDLER_DEADLINE_MS = 10000;
-const COVER_DEADLINE_MS = 6000;
+// GitHub's image proxy gives up after a few seconds, so the cover gets a short
+// budget: a card without art now beats a broken image. The cover keeps loading
+// in the background and lands in the image cache for the next request.
+const HANDLER_DEADLINE_MS = 9000;
+const COVER_DEADLINE_MS = 2200;
+const DEGRADED_CACHE = 'public, max-age=30, s-maxage=30, stale-while-revalidate=60';
 
 async function loadCover({ image, artist, track }) {
     const load = async () => {
@@ -26,7 +30,7 @@ module.exports = async (req, res) => {
     const { user, safeWidth, safeBg, safeAccent, safeMode, safeRange, safeTheme, safeLimit, safeSource } = validateParams(req.query);
     const provider = getProvider(safeSource);
 
-    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
     res.setHeader('Content-Disposition', 'inline; filename="scrobcrd.svg"');
     res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; sandbox");
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -38,7 +42,7 @@ module.exports = async (req, res) => {
             ? 'no-store'
             : 'public, max-age=30, s-maxage=30, stale-while-revalidate=60');
 
-        return res.status(status).send(errorCard({
+        return res.status(status).type('image/svg+xml').send(errorCard({
             width: safeWidth,
             height: 120,
             bgFill: safeBg,
@@ -48,7 +52,11 @@ module.exports = async (req, res) => {
 
     const sendSvg = (svg, status = 200) => {
         if (res.headersSent) return;
-        return res.status(status).send(svg);
+        // Defense in depth: only ever emit an SVG document, with a fixed content type.
+        if (typeof svg !== 'string' || !/^\s*<svg[\s>]/.test(svg)) {
+            return sendError('Internal Server Error', 500);
+        }
+        return res.status(status).type('image/svg+xml').send(svg);
     };
 
     if (!user) return sendError('Missing user parameter', 400);
@@ -70,9 +78,12 @@ module.exports = async (req, res) => {
                 imageBase64: await loadCover(track)
             })));
 
-            res.setHeader('Cache-Control', safeMode === 'history'
-                ? 'public, max-age=60, s-maxage=60, stale-while-revalidate=30'
-                : 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
+            const allCovers = tracksWithImages.every((t) => t.imageBase64);
+            res.setHeader('Cache-Control', !allCovers
+                ? DEGRADED_CACHE
+                : safeMode === 'history'
+                    ? 'public, max-age=60, s-maxage=60, stale-while-revalidate=30'
+                    : 'public, max-age=900, s-maxage=900, stale-while-revalidate=1800');
 
             const svg = generateListSvg(
                 { tracks: tracksWithImages },
@@ -100,9 +111,9 @@ module.exports = async (req, res) => {
 
         if (safeMode === 'top') data.type = 'top_track';
 
-        res.setHeader('Cache-Control', getCacheControl(safeMode, data.type));
-
         const imageBase64 = await loadCover(data);
+
+        res.setHeader('Cache-Control', imageBase64 ? getCacheControl(safeMode, data.type) : DEGRADED_CACHE);
 
         const svg = generateSvg(
             { ...data, imageBase64 },

@@ -91,3 +91,30 @@ assert.equal(v.safeBg, '181818');
 assert.equal(v.safeAccent, '#abc');
 
 console.log('all tests passed');
+
+// --- security regression tests ---
+{
+    const { decodeHtml: dh, escapeXml: ex } = require('./lib/utils');
+    const { validateParams: vp } = require('./lib/validation');
+
+    // nested tags must not re-assemble into a real tag
+    assert.ok(!/<script/i.test(dh('<scr<b>ipt>alert(1)</scr</b>ipt>')));
+    assert.ok(!/<script/i.test(dh('<<script>script>alert(1)')));
+    assert.ok(!/[<>]/.test(dh('<script')));
+    // entities still decode, and output stays safe after escaping
+    assert.equal(dh('Rock &amp; Roll'), 'Rock & Roll');
+    assert.equal(dh('<b>Bold</b> &#39;n&#x27; &amp;lt;'), "Bold 'n' &lt;");
+    assert.equal(ex(dh('&lt;script&gt;')), '&lt;script&gt;');
+
+    // array / object query values must not crash or leak through
+    const weird = vp({ user: ['a', 'b'], bg: ['abc'], accent: ['fff'], theme: ['osx'], width: ['500'], mode: { x: 1 } });
+    assert.equal(weird.user, undefined);
+    assert.equal(weird.safeBg, '181818');
+    assert.equal(weird.safeAccent, null);
+    assert.equal(weird.safeTheme, 'default');
+    assert.equal(weird.safeWidth, 400);
+    assert.equal(weird.safeMode, 'smart');
+    assert.equal(vp({ accent: '#FF00aa' }).safeAccent, '#ff00aa');
+    assert.equal(vp({ bg: '"><script>' }).safeBg, '181818');
+}
+console.log('security tests passed');

@@ -344,3 +344,5 @@ output {
     opacity: 1;
     transform: translate(-50%, 0);
 }
+
+.preview-frame.is-loading #previewImg { opacity: 0.5; transition: opacity 0.2s; }
